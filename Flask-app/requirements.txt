@@ -2,6 +2,12 @@
 Flask==2.3.3
 Werkzeug==2.3.7
 
+# System monitoring
+psutil==5.9.6
+
+# Async HTTP client
+aiohttp==3.9.1
+
 # Database
 #SQLite3  # Built into Python
 #sqlite3  # Built into Python

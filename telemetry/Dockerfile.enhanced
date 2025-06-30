@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.enhanced.txt .
+RUN pip install --no-cache-dir -r requirements.enhanced.txt
+
+# Copy the enhanced reporter script
+COPY enhanced-site24x7-reporter.py .
+
+# Create a non-root user
+RUN useradd -m -u 1000 reporter && chown -R reporter:reporter /app
+USER reporter
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import psutil; print('Enhanced reporter is running')" || exit 1
+
+# Run the enhanced reporter
+CMD ["python", "enhanced-site24x7-reporter.py"]

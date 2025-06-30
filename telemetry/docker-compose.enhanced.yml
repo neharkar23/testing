@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector-enhanced
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTL gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8889"   # Collector metrics endpoint
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.site24x7rum.in
+      - OTEL_EXPORTER_OTLP_HEADERS=api-key=in_24be7e829d6ca9b6dd72ca278c32e2bf
+    restart: unless-stopped
+    networks:
+      - telemetry-network
+
+  enhanced-site24x7-reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.enhanced
+    container_name: enhanced-site24x7-reporter
+    environment:
+      - SITE24X7_API_KEY=in_24be7e829d6ca9b6dd72ca278c32e2bf
+      - SITE24X7_APP_KEY=e5b0f39bd1c6a990b6ca6ef78104bff7
+      - SITE24X7_LICENSE_KEY=in_24be7e829d6ca9b6dd72ca278c32e2bf
+    volumes:
+      - ../Flask-app/metrics.db:/app/metrics.db:ro  # Read-only access to metrics DB
+    restart: unless-stopped
+    depends_on:
+      - otel-collector
+    networks:
+      - telemetry-network
+
+  # System monitoring container
+  system-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: system-monitor
+    environment:
+      - SITE24X7_API_KEY=in_24be7e829d6ca9b6dd72ca278c32e2bf
+      - SITE24X7_APP_KEY=e5b0f39bd1c6a990b6ca6ef78104bff7
+      - SITE24X7_LICENSE_KEY=in_24be7e829d6ca9b6dd72ca278c32e2bf
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    privileged: true
+    restart: unless-stopped
+    networks:
+      - telemetry-network
+
+networks:
+  telemetry-network:
+    driver: bridge

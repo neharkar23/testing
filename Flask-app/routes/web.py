@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from services.agent_service import agent_service
+from services.enhanced_agent_service import enhanced_agent_service
 from services.enhanced_metrics_service import enhanced_metrics_service
+from services.site24x7_service import site24x7_service
 from core.tracing import tracing_manager
 from config.settings import settings
 import structlog
@@ -12,7 +13,7 @@ web_bp = Blueprint('web', __name__)
 @web_bp.route('/')
 def index():
     """Main playground page"""
-    configs = agent_service.get_available_configurations()
+    configs = enhanced_agent_service.get_available_configurations()
     
     return render_template(
         'playground.html',
@@ -28,7 +29,7 @@ def index():
 
 @web_bp.route('/generate', methods=['POST'])
 def generate():
-    """Handle form submission"""
+    """Handle form submission with enhanced logging"""
     try:
         # Get form data
         framework = request.form.get('framework')
@@ -48,11 +49,11 @@ def generate():
             'query': query
         }
         
-        # Execute query
-        result = agent_service.execute_query(request_data)
+        # Execute query with enhanced logging
+        result = enhanced_agent_service.execute_query(request_data)
         
         # Get configurations for form
-        configs = agent_service.get_available_configurations()
+        configs = enhanced_agent_service.get_available_configurations()
         
         return render_template(
             'playground.html',
@@ -67,6 +68,11 @@ def generate():
             trace_id=result.get('trace_id'),
             duration=result.get('duration', 0),
             tokens_used=result.get('tokens_used', 0),
+            input_tokens=result.get('input_tokens', 0),
+            output_tokens=result.get('output_tokens', 0),
+            cost_usd=result.get('cost_usd', 0.0),
+            cpu_usage_change=result.get('cpu_usage_change', 0),
+            memory_usage_change=result.get('memory_usage_change', 0),
             status=result.get('status', 'unknown')
         )
         
@@ -101,7 +107,7 @@ def metrics():
         # Get enhanced metrics for backward compatibility
         enhanced_metrics = enhanced_metrics_service.get_enhanced_metrics(7)
         
-        configs = agent_service.get_available_configurations()
+        configs = enhanced_agent_service.get_available_configurations()
         
         return render_template(
             'enhanced_metrics.html',
@@ -116,7 +122,7 @@ def metrics():
         flash(f'Error loading metrics: {str(e)}', 'error')
         
         # Fallback to basic metrics page
-        configs = agent_service.get_available_configurations()
+        configs = enhanced_agent_service.get_available_configurations()
         fallback_metrics = {
             'total_requests': 0,
             'success_rate': 0,
@@ -135,12 +141,8 @@ def metrics():
 
 @web_bp.route('/logs')
 def logs():
-    """Logs page"""
-    # Get recent traces for log display
-    traces = tracing_manager.get_all_traces()
-    recent_traces = sorted(traces, key=lambda x: x.get('timestamp', ''), reverse=True)[:50]
-    
-    return render_template('logs.html', traces=recent_traces)
+    """System logs and application logs page"""
+    return render_template('app_logs.html')
 
 @web_bp.route('/real-time-dashboard')
 def real_time_dashboard():
@@ -148,7 +150,7 @@ def real_time_dashboard():
     try:
         # Get current real-time metrics
         metrics = enhanced_metrics_service.get_real_time_metrics(24)
-        configs = agent_service.get_available_configurations()
+        configs = enhanced_agent_service.get_available_configurations()
         
         return render_template(
             'real_time_dashboard.html',

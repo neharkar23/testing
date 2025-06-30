@@ -65,7 +65,19 @@
             </div>
             <div class="trace-item">
               <span class="trace-label">Tokens:</span>
-              <span class="trace-value">{{ tokens_used }}</span>
+              <span class="trace-value">{{ tokens_used }} ({{ input_tokens }}/{{ output_tokens }})</span>
+            </div>
+            <div class="trace-item">
+              <span class="trace-label">Cost:</span>
+              <span class="trace-value">${{ "%.6f"|format(cost_usd) }}</span>
+            </div>
+            <div class="trace-item">
+              <span class="trace-label">CPU Change:</span>
+              <span class="trace-value">{{ "%.1f"|format(cpu_usage_change) }}%</span>
+            </div>
+            <div class="trace-item">
+              <span class="trace-label">Memory Change:</span>
+              <span class="trace-value">{{ "%.1f"|format(memory_usage_change) }}%</span>
             </div>
             <div class="trace-item">
               <span class="trace-label">Status:</span>
@@ -83,7 +95,7 @@
     <div class="playground-section">
       <div class="io-block">
         <div class="io-header">
-          <i class="fas fa-keyboard"></i> Input
+          <i class="fas fa-keyboard"></i> Input Query
         </div>
         <textarea 
           name="prompt_text" 
@@ -97,7 +109,7 @@
 
       <div class="io-block">
         <div class="io-header">
-          <i class="fas fa-terminal"></i> Response
+          <i class="fas fa-terminal"></i> Response Output
         </div>
         <div class="output-box" id="output-box">
           {% if response %}
@@ -106,6 +118,7 @@
             <div class="output-placeholder">
               <i class="fas fa-robot"></i>
               <p>No response yet. Submit a query to see results.</p>
+              <small>All interactions are logged to Site24x7 for monitoring and analysis.</small>
             </div>
           {% endif %}
         </div>
@@ -119,7 +132,7 @@
   <div class="loading-content">
     <div class="spinner"></div>
     <p>Processing your request...</p>
-    <small>This may take a few moments</small>
+    <small>Logging interaction data to Site24x7...</small>
   </div>
 </div>
 {% endblock %}
